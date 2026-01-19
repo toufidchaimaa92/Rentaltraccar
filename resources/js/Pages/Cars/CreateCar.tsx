@@ -66,7 +66,6 @@ export default function CreateCar({ auth, carModels }) {
     license_plate: "",
     wwlicense_plate: "",
     mileage: "",
-    traccar_device_id: "",
     status: "available",
     insurance_expiry_date: "",
     technical_check_expiry_date: "",
@@ -121,17 +120,17 @@ export default function CreateCar({ auth, carModels }) {
     <AuthenticatedLayout user={auth.user}>
       <Head title="Créer une voiture" />
 
-      {/* ================= CARD 1: INFO VÉHICULE ================ */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <CarIcon className="h-5 w-5 text-primary" />
-            Informations du véhicule
-          </CardTitle>
-        </CardHeader>
+      <form className="space-y-6" onSubmit={submit}>
+        {/* ================= CARD 1: INFO VÉHICULE ================ */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CarIcon className="h-5 w-5 text-primary" />
+              Informations du véhicule
+            </CardTitle>
+          </CardHeader>
 
-        <CardContent>
-          <form className="space-y-4" onSubmit={submit}>
+          <CardContent>
             {/* ROW 1 --- MODEL + STATUS */}
             <div className="grid md:grid-cols-2 gap-4">
               <div>
@@ -208,25 +207,7 @@ export default function CreateCar({ auth, carModels }) {
               </div>
             </div>
 
-            {/* ROW 3 --- TRACCAR DEVICE */} 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <LabelWithIcon icon={CarIcon} text="Traccar Device ID" htmlFor="traccar_device_id" />
-                <Input
-                  id="traccar_device_id"
-                  type="number"
-                  min="1"
-                  value={data.traccar_device_id}
-                  onChange={(e) => setData("traccar_device_id", e.target.value)}
-                  placeholder="123"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  ID from Traccar (read-only link)
-                </p>
-              </div>
-            </div>
-
-            {/* ROW 4 --- INSURANCE + TECH CHECK */}
+            {/* ROW 3 --- INSURANCE + TECH CHECK */}
             <div className="grid md:grid-cols-2 gap-4">
 
               {/* Insurance */}
@@ -281,21 +262,19 @@ export default function CreateCar({ auth, carModels }) {
             </div>
 
             {/* SUBMIT BUTTON MOVED AFTER FINANCE CARD */}
+          </CardContent>
+        </Card>
 
-          </form>
-        </CardContent>
-      </Card>
+        {/* ================= CARD 2 : FINANCEMENT ================= */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <DollarSign className="h-5 w-5 text-primary" />
+              Financement & Coûts
+            </CardTitle>
+          </CardHeader>
 
-      {/* ================= CARD 2 : FINANCEMENT ================= */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <DollarSign className="h-5 w-5 text-primary" />
-            Financement & Coûts
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent>
+          <CardContent>
           {/* Purchase price + insurance annual */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
@@ -391,8 +370,9 @@ export default function CreateCar({ auth, carModels }) {
               Créer le véhicule
             </Button>
           </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </form>
     </AuthenticatedLayout>
   );
 }
