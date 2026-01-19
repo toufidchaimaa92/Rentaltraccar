@@ -70,6 +70,7 @@ export default function EditCar({ auth, car, carModels }) {
     license_plate: car.license_plate || "",
     wwlicense_plate: car.wwlicense_plate || "",
     mileage: car.mileage || "",
+    traccar_device_id: car.traccar_device_id ?? "",
     status: car.status || "available",
     insurance_expiry_date: car.insurance_expiry_date
       ? formatDate(new Date(car.insurance_expiry_date))
@@ -209,7 +210,24 @@ export default function EditCar({ auth, car, carModels }) {
               </div>
             </div>
 
-            {/* ROW 3: DATES */}
+            {/* ROW 3: TRACCAR DEVICE */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <LabelWithIcon icon={CarIcon} text="Traccar Device ID" />
+                <Input
+                  type="number"
+                  min="1"
+                  value={data.traccar_device_id}
+                  onChange={(e) => setData("traccar_device_id", e.target.value)}
+                  placeholder="123"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  ID from Traccar (read-only link)
+                </p>
+              </div>
+            </div>
+
+            {/* ROW 4: DATES */}
             <div className="grid md:grid-cols-2 gap-4">
               {/* Insurance date */}
               <div>

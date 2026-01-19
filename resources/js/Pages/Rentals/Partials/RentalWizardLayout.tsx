@@ -63,8 +63,8 @@ export default function RentalWizardLayout({
   children,
 }: RentalWizardLayoutProps) {
   return (
-    <div>
-      <div>
+    <div className="flex min-h-screen flex-col">
+      <div className="flex-1 overflow-y-auto pb-28">
         {/* STEPPER */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}

@@ -4,6 +4,7 @@ import { useDropzone } from "react-dropzone";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ImageZoom } from "@/components/file/imagezoom";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,8 @@ interface ProgressUploadProps {
   accept?: string[];
   maxSize?: number;
   error?: string;
+  existingImage?: string | null;
+  onClearExisting?: () => void;
 }
 
 export function ProgressUpload({
@@ -31,6 +34,8 @@ export function ProgressUpload({
   accept = ["image/png", "image/jpg", "image/jpeg"],
   maxSize = 5 * 1024 * 1024,
   error,
+  existingImage = null,
+  onClearExisting,
 }: ProgressUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [status, setStatus] = useState<UploadStatus>("idle");
@@ -96,6 +101,10 @@ export function ProgressUpload({
       if (preview) URL.revokeObjectURL(preview);
     };
   }, [preview]);
+
+  const previewSource = preview ?? existingImage ?? null;
+  const isExistingPreview = Boolean(existingImage && !file && !preview);
+  const isReady = status === "ready" || isExistingPreview;
 
   return (
     <Card
@@ -164,26 +173,46 @@ export function ProgressUpload({
               <X className="h-4 w-4" />
             </Button>
           )}
+          {!file && existingImage && onClearExisting && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={(e) => {
+                e.preventDefault();
+                onClearExisting();
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {/* PREVIEW */}
-        {preview ? (
+        {previewSource ? (
           <div className="flex items-center gap-3 rounded-md border bg-background p-3">
-            <div className="relative h-16 w-12 overflow-hidden rounded-md border">
-              <img
-                src={preview}
-                alt=""
-                className="h-full w-full object-cover"
+            <div
+              className="relative h-16 w-12 overflow-hidden rounded-md border"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+              role="presentation"
+            >
+              <ImageZoom
+                imageUrl={previewSource}
+                thumbnailUrl={previewSource}
+                imageTitle={file?.name || "Prévisualisation"}
+                className="h-full w-full"
+                classNameThumbnailViewer="h-full w-full rounded-none object-cover"
               />
             </div>
 
             <div className="flex-1 space-y-1">
               <div className="flex items-center gap-2">
                 <Progress
-                  value={status === "ready" ? 100 : progress}
+                  value={isReady ? 100 : progress}
                   className="h-1 flex-1"
                 />
-                {status === "ready" ? (
+                {isReady ? (
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                 ) : (
                   <span className="text-[11px] text-muted-foreground">
@@ -192,7 +221,7 @@ export function ProgressUpload({
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                {status === "ready" ? "Fichier prêt" : "Préparation..."}
+                {isReady ? "Fichier prêt" : "Préparation..."}
               </p>
             </div>
           </div>

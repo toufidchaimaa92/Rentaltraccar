@@ -236,7 +236,7 @@ export default function CarModelsIndex({ auth, carModels, filters }: Props) {
             (carModels.data || []).map((model) => (
               <AdminMobileCard
                 key={model.id}
-                onClick={() => router.get(route("car-models.show", model.id))}
+                onClick={() => router.visit(route("car-models.show", model.id))}
                 items={[
                   { label: "Marque", value: model.brand, emphasis: true },
                   { label: "Modèle", value: model.model },

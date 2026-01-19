@@ -263,7 +263,7 @@ export default function FactureIndexPage({ auth, factures, filters }: FactureInd
             (factures.data || []).map((facture) => (
               <AdminMobileCard
                 key={facture.id}
-                onClick={() => router.get(route("factures.show", facture.id))}
+                onClick={() => router.visit(route("factures.show", facture.id))}
                 items={[
                   { label: "Facture", value: facture.invoice_number, emphasis: true },
                   { label: "Client", value: facture.client_name },

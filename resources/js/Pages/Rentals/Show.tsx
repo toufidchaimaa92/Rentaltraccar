@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout';
 import { Link, useForm, router } from '@inertiajs/react';
 import {
@@ -27,6 +27,7 @@ import { MoreVertical } from 'lucide-react';
 import { buildPricingSummaryItems } from '@/components/rentals/reservationSummaryUtils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import RentalStatusBadge from '@/components/rentals/RentalStatusBadge';
 import {
   Dialog,
   DialogClose,
@@ -43,11 +44,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   CalendarDays,
   Car,
+  AlertTriangle,
   CreditCard,
   Eye,
   Users,
   Clock,
   FileText,
+  ChevronLeft,
   Pencil,
   Repeat,
   Plus,
@@ -56,6 +59,7 @@ import {
   Check,
   Play,
   CheckCircle,
+  MapPin,
   XCircle,
 } from 'lucide-react';
 
@@ -158,6 +162,39 @@ interface Rental {
   overdue_status?: 'on_time' | 'due_soon' | 'overdue' | null;
 }
 
+interface RentalGpsPosition {
+  rental_id: number;
+  car_id: number;
+  license_plate: string;
+  latitude: number;
+  longitude: number;
+  speed: number;
+  updated_at: string | null;
+}
+
+interface RentalAlert {
+  rental_id: number;
+  car_id: number;
+  license_plate: string;
+  type: string;
+  message: string;
+  event_time: string | null;
+}
+
+interface RentalTripHistory {
+  rental_id: number;
+  car_id: number;
+  license_plate: string;
+  from: string | null;
+  to: string | null;
+  positions: {
+    latitude: number;
+    longitude: number;
+    speed: number;
+    time: string | null;
+  }[];
+}
+
 interface Props {
   auth: { user: any };
   rental: Rental;
@@ -197,6 +234,12 @@ const statusOptions = [
   { value: 'cancelled', label: 'Cancelled', color: 'text-red-600', Icon: XCircle },
 ];
 
+const alertMeta: Record<string, { label: string; icon: React.ComponentType<any>; color: string }> = {
+  deviceOverspeed: { label: 'Excès de vitesse', icon: AlertTriangle, color: 'text-orange-600' },
+  geofenceEnter: { label: 'Entrée zone', icon: MapPin, color: 'text-green-600' },
+  geofenceExit: { label: 'Sortie zone', icon: MapPin, color: 'text-red-600' },
+};
+
 export default function ShowRental({ auth, rental, availableCars = [] }: Props) {
   if (!rental) {
     return (
@@ -212,6 +255,7 @@ export default function ShowRental({ auth, rental, availableCars = [] }: Props) 
   const conductor = isLongTerm ? secondDriver || client : secondDriver;
 
   const pricePerDayNum = Number(rental.price_per_day || 0);
+  const isActiveRental = rental.status?.toLowerCase() === 'active';
 
   const totalPaid = useMemo(
     () => rental.payments?.reduce((sum, p) => sum + Number(p.amount || 0), 0) ?? 0,
@@ -229,6 +273,85 @@ export default function ShowRental({ auth, rental, availableCars = [] }: Props) 
   const paymentCycleLabel = rental.payment_cycle_days
     ? `${rental.payment_cycle_days} jours`
     : 'Mensuel';
+
+  const [gpsPosition, setGpsPosition] = useState<RentalGpsPosition | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(isActiveRental);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+  const [alerts, setAlerts] = useState<RentalAlert[]>([]);
+  const [alertsLoading, setAlertsLoading] = useState(isActiveRental);
+  const [alertsError, setAlertsError] = useState<string | null>(null);
+
+  const fetchGpsPosition = useCallback(async () => {
+    if (!isActiveRental) {
+      return;
+    }
+
+    setGpsError(null);
+    try {
+      const response = await fetch(`/api/traccar/rentals/${rental.id}/position`);
+
+      if (response.status === 403) {
+        setGpsPosition(null);
+        setGpsError('GPS disponible uniquement pour les locations actives.');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to load position');
+      }
+
+      const data = (await response.json()) as RentalGpsPosition | null;
+      setGpsPosition(data);
+    } catch (error) {
+      setGpsError('Impossible de charger la localisation GPS.');
+    } finally {
+      setGpsLoading(false);
+    }
+  }, [isActiveRental, rental.id]);
+
+  useEffect(() => {
+    if (!isActiveRental) {
+      return;
+    }
+
+    fetchGpsPosition();
+    const intervalId = window.setInterval(fetchGpsPosition, 30000);
+
+    return () => window.clearInterval(intervalId);
+  }, [fetchGpsPosition, isActiveRental]);
+
+  const fetchAlerts = useCallback(async () => {
+    if (!isActiveRental) {
+      return;
+    }
+
+    setAlertsError(null);
+    try {
+      const response = await fetch(`/api/traccar/alerts?rental_id=${rental.id}&limit=5`);
+
+      if (!response.ok) {
+        throw new Error('Failed to load alerts');
+      }
+
+      const data = (await response.json()) as RentalAlert[];
+      setAlerts(data);
+    } catch (error) {
+      setAlertsError('Impossible de charger les alertes GPS.');
+    } finally {
+      setAlertsLoading(false);
+    }
+  }, [isActiveRental, rental.id]);
+
+  useEffect(() => {
+    if (!isActiveRental) {
+      return;
+    }
+
+    fetchAlerts();
+    const intervalId = window.setInterval(fetchAlerts, 30000);
+
+    return () => window.clearInterval(intervalId);
+  }, [fetchAlerts, isActiveRental]);
 
   // ---- Delete dialog state + form
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -456,9 +579,7 @@ export default function ShowRental({ auth, rental, availableCars = [] }: Props) 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-extrabold tracking-tight">Location #{rental.id}</h1>
-              <Badge className={`text-xs font-semibold capitalize ${getStatusColor(rental.status)}`}>
-                {rental.status ?? '—'}
-              </Badge>
+              <RentalStatusBadge status={rental.status} />
             </div>
             <div className="flex flex-wrap gap-2">
               <Button asChild>
@@ -575,11 +696,7 @@ export default function ShowRental({ auth, rental, availableCars = [] }: Props) 
                 <span className="capitalize">Informations de Réservation</span>
               </div>
             }
-            headerActions={
-              <Badge className={`text-xs font-semibold capitalize ${getStatusColor(rental.status)}`}>
-                {rental.status ?? '—'}
-              </Badge>
-            }
+            headerActions={<RentalStatusBadge status={rental.status} />}
           />
         </div>
       </AuthenticatedLayout>
@@ -588,142 +705,264 @@ export default function ShowRental({ auth, rental, availableCars = [] }: Props) 
 
   return (
     <AuthenticatedLayout user={auth.user}>
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight">
-          Location #{rental.id}
-        </h1>
-  
-        {/* SPLIT BUTTON – SAME ON DESKTOP & MOBILE */}
-        <ButtonGroup
-          className="
+      <div>
+        {/* ================= HEADER ================= */}
+        <div className="flex items-center justify-between gap-4 mb-6">
+
+          {/* LEFT: Back + Title */}
+          <div className="flex items-center gap-3 min-w-0">
+            <Link href={route("rentals.index")}>
+              <Button variant="ghost" size="icon">
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+
+            <h1 className="text-3xl font-extrabold tracking-tight truncate">
+              Location #{rental.id}
+            </h1>
+          </div>
+
+          {/* SPLIT BUTTON – SAME ON DESKTOP & MOBILE */}
+          <ButtonGroup
+            className="
             rounded-xl
             overflow-hidden
             border
             bg-background
           "
-        >
-          {/* Primary action – always visible */}
-          <Link href={route("rentals.contract.show", rental.id)}>
-            <Button
-              variant="ghost"
-              className="
+          >
+            {/* Primary action – always visible */}
+            <Link href={route("rentals.contract.show", rental.id)}>
+              <Button
+                variant="ghost"
+                className="
                 rounded-none
                 px-4
                 gap-2
               "
-            >
-              <FileText className="h-4 w-4" />
-              Voir contrat
-            </Button>
-          </Link>
-  
-          {/* Dropdown actions */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="
+              >
+                <FileText className="h-4 w-4" />
+                Voir contrat
+              </Button>
+            </Link>
+
+            {/* Dropdown actions */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="
                   rounded-none
                   px-3
                   border-l
                 "
-              >
-                <ChevronDownIcon className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-  
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuGroup>
-                <DropdownMenuItem asChild>
-                  <Link href={route("rentals.edit", rental.id)}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Modifier
-                  </Link>
-                </DropdownMenuItem>
-  
-                <DropdownMenuItem asChild>
-                  <Link href={`/rentals/${rental.id}/extend`}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Prolonger
-                  </Link>
-                </DropdownMenuItem>
-  
-                <DropdownMenuItem asChild>
-                  <Link href={route("rentals.changeCar", rental.id)}>
-                    <Repeat className="mr-2 h-4 w-4" />
-                    Changer de voiture
-                  </Link>
-                </DropdownMenuItem>
-  
-                <DropdownMenuItem
-                  asChild
-                  disabled={!rental.payments?.length}
                 >
-                  <Link
-                    href={route(
-                      "payments.invoice.show",
-                      rental.payments?.[0]?.id ?? 0
-                    )}
-                  >
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Reçu paiement
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-  
-              {isAdmin && (
-                <>
-                  <DropdownMenuSeparator />
+                  <ChevronDownIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuGroup>
+                  <DropdownMenuItem asChild>
+                    <Link href={route("rentals.edit", rental.id)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Modifier
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem asChild>
+                    <Link href={`/rentals/${rental.id}/extend`}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Prolonger
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem asChild>
+                    <Link href={route("rentals.changeCar", rental.id)}>
+                      <Repeat className="mr-2 h-4 w-4" />
+                      Changer de voiture
+                    </Link>
+                  </DropdownMenuItem>
+
                   <DropdownMenuItem
-                    onClick={() => setConfirmDeleteOpen(true)}
-                    className="
+                    asChild
+                    disabled={!rental.payments?.length}
+                  >
+                    <Link
+                      href={route(
+                        "payments.invoice.show",
+                        rental.payments?.[0]?.id ?? 0
+                      )}
+                    >
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Reçu paiement
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setConfirmDeleteOpen(true)}
+                      className="
                       text-red-600 font-medium
                       hover:text-red-700
                       hover:bg-red-50
                       focus:bg-red-50
                     "
-                  >
-                    <Trash2 className="mr-2 h-4 w-4 text-red-600" />
-                    Supprimer
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </ButtonGroup>
-      </div>
-  
-      {/* DELETE CONFIRM DIALOG (single instance) */}
-      {isAdmin && (
-        <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-          <DialogContent className="sm:max-w-[420px]">
-            <DialogHeader>
-              <DialogTitle>Supprimer la location</DialogTitle>
-              <DialogDescription>
-                Cette action est irréversible. Voulez-vous vraiment supprimer la
-                location #{rental.id} ?
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline" type="button">
-                  Annuler
+                    >
+                      <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+                      Supprimer
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </ButtonGroup>
+        </div>
+
+        {/* DELETE CONFIRM DIALOG (single instance) */}
+        {isAdmin && (
+          <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+            <DialogContent className="sm:max-w-[420px]">
+              <DialogHeader>
+                <DialogTitle>Supprimer la location</DialogTitle>
+                <DialogDescription>
+                  Cette action est irréversible. Voulez-vous vraiment supprimer la
+                  location #{rental.id} ?
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline" type="button">
+                    Annuler
+                  </Button>
+                </DialogClose>
+                <Button
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={deleteForm.processing}
+                >
+                  {deleteForm.processing ? "Suppression…" : "Supprimer"}
                 </Button>
-              </DialogClose>
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={deleteForm.processing}
-              >
-                {deleteForm.processing ? "Suppression…" : "Supprimer"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-  
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {isActiveRental && (
+          <Card className="mb-6 w-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Car className="h-5 w-5 text-primary" />
+                Vehicle Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-muted-foreground">
+                Statut GPS en lecture seule pour cette location active.
+              </div>
+
+              {gpsError ? (
+                <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  {gpsError}
+                </div>
+              ) : null}
+
+              {gpsLoading && !gpsPosition ? (
+                <div className="mt-4 text-sm text-muted-foreground">Chargement des données GPS...</div>
+              ) : null}
+
+              {!gpsLoading && !gpsPosition ? (
+                <div className="mt-4 text-sm text-muted-foreground">
+                  GPS non disponible pour ce véhicule.
+                </div>
+              ) : null}
+
+              {gpsPosition ? (
+                <>
+                  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="rounded-lg border p-4">
+                      <div className="text-xs text-muted-foreground">Statut véhicule</div>
+                      <div className="mt-1 text-sm font-semibold">
+                        {gpsPosition.speed > 0 ? 'Moving' : 'Stopped'}
+                      </div>
+                    </div>
+                    <div className="rounded-lg border p-4">
+                      <div className="text-xs text-muted-foreground">Vitesse</div>
+                      <div className="mt-1 text-sm font-semibold">{gpsPosition.speed ?? 0} km/h</div>
+                    </div>
+                    <div className="rounded-lg border p-4">
+                      <div className="text-xs text-muted-foreground">Adresse</div>
+                      <div className="mt-1 text-sm font-semibold">Adresse inconnue</div>
+                    </div>
+                    <div className="rounded-lg border p-4">
+                      <div className="text-xs text-muted-foreground">Dernière mise à jour</div>
+                      <div className="mt-1 text-sm font-semibold">{gpsPosition.updated_at ?? '—'}</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <Link href={route('rentals.gps', rental.id)}>
+                      <Button variant="outline">Voir la localisation du véhicule</Button>
+                    </Link>
+                    <Link href={route('rentals.trip-history', rental.id)}>
+                      <Button variant="outline">Historique du trajet</Button>
+                    </Link>
+                  </div>
+
+                  <div className="mt-6 space-y-3">
+                    <div className="text-sm font-medium">Alertes récentes</div>
+
+                    {alertsError ? (
+                      <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                        {alertsError}
+                      </div>
+                    ) : null}
+
+                    {alertsLoading && !alerts.length ? (
+                      <div className="text-sm text-muted-foreground">Chargement des alertes...</div>
+                    ) : null}
+
+                    {!alertsLoading && !alerts.length ? (
+                      <div className="text-sm text-muted-foreground">Aucune alerte récente.</div>
+                    ) : null}
+
+                    {alerts.length > 0 ? (
+                      <div className="space-y-2">
+                        {alerts.map((alert, index) => {
+                          const meta = alertMeta[alert.type] ?? {
+                            label: alert.type,
+                            icon: AlertTriangle,
+                            color: 'text-muted-foreground',
+                          };
+                          const Icon = meta.icon;
+
+                          return (
+                            <div
+                              key={`${alert.rental_id}-${alert.event_time ?? index}`}
+                              className="flex items-start gap-3 rounded-md border p-3"
+                            >
+                              <Icon className={`mt-0.5 h-4 w-4 ${meta.color}`} />
+                              <div>
+                                <div className="text-sm font-medium">{meta.label}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {alert.message} • {alert.event_time ?? '—'}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                </>
+              ) : null}
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
 
           {/* Client */}
@@ -865,9 +1104,7 @@ export default function ShowRental({ auth, rental, availableCars = [] }: Props) 
             }
             headerActions={
               <div className="flex items-center gap-2">
-                <Badge className={`text-xs font-semibold capitalize ${getStatusColor(rental.status)}`}>
-                  {rental.status ?? '—'}
-                </Badge>
+                <RentalStatusBadge status={rental.status} />
                 <Link
                   href={route('rentals.changeCar', rental.id)}
                   className="text-muted-foreground hover:text-foreground"
@@ -1218,9 +1455,14 @@ export default function ShowRental({ auth, rental, availableCars = [] }: Props) 
 
         {/* Back */}
         <div className="pt-6 text-center">
-          <Link href={route('rentals.index')}>
-            <Button variant="secondary" aria-label="Retour à la liste des locations">
-              Retour à la liste des locations
+          <Link href={route("rentals.index")}>
+            <Button
+              variant="secondary"
+              aria-label="Retour à la liste des locations"
+              className="inline-flex items-center gap-2"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span>Retour à la liste des locations</span>
             </Button>
           </Link>
         </div>

@@ -16,6 +16,7 @@ class Car extends Model
         'insurance_expiry_date',
         'technical_check_expiry_date',
         'mileage',
+        'traccar_device_id',
         // ✅ financials
         'purchase_price',
         'monthly_credit',
@@ -27,6 +28,7 @@ class Car extends Model
 
     protected $casts = [
         'mileage' => 'integer',
+        'traccar_device_id' => 'integer',
         'insurance_expiry_date' => 'date',
         'technical_check_expiry_date' => 'date',
         'credit_start_date' => 'date',

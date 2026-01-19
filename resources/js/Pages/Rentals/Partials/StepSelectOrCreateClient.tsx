@@ -21,6 +21,7 @@ import {
   Calendar as CalendarIcon,
   Search,
   Trash,
+  Pencil,
   UserSearch,
   UserPlus,
   User,
@@ -211,7 +212,7 @@ const RenderYellowRating = ({ value }: { value: number }) => (
   </Rating>
 );
 
-const Selected = ({ data, onRemove }: any) => {
+const Selected = ({ data, onRemove, onEdit }: any) => {
   const ratingValue = typeof data?.rating === "number" ? data.rating : Number(data?.rating || 0);
   const tone = getRatingTone(Number.isFinite(ratingValue) ? ratingValue : null);
 
@@ -225,14 +226,28 @@ const Selected = ({ data, onRemove }: any) => {
       `}
     >
       {/* Remove button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onRemove}
-        className="absolute top-3 right-3 text-red-500 hover:bg-red-200/30"
-      >
-        <Trash className="h-4 w-4" />
-      </Button>
+      <div className="absolute top-3 right-3 flex items-center gap-1">
+        {onEdit && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onEdit}
+            className="text-amber-600 hover:bg-amber-200/30"
+            aria-label="Modifier le client"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onRemove}
+          className="text-red-500 hover:bg-red-200/30"
+          aria-label="Supprimer le client sélectionné"
+        >
+          <Trash className="h-4 w-4" />
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-5 gap-x-8 text-sm items-start">
         {/* LEFT SIDE */}
@@ -388,12 +403,18 @@ export default function StepSelectOrCreateClient({ clients, formData = {}, setFo
     if (!c) return;
     setFormData(key + "_id", id);
     setFormData(key, c);
+    if (key === "client") {
+      setFormData("client_mode", "");
+    }
     form.reset({ ...c });
   };
 
   const removeClient = (key: string, form: any) => {
     setFormData(key + "_id", "");
     setFormData(key, {});
+    if (key === "client") {
+      setFormData("client_mode", "");
+    }
     form.reset({});
     key === "client" ? setMMode("create") : setSMode("create");
   };
@@ -421,7 +442,12 @@ export default function StepSelectOrCreateClient({ clients, formData = {}, setFo
 
             <Switch
               checked={mMode === "create"}
-              onCheckedChange={(val) => setMMode(val ? "create" : "select")}
+              onCheckedChange={(val) => {
+                setMMode(val ? "create" : "select");
+                if (!val) {
+                  setFormData("client_mode", "");
+                }
+              }}
             />
           </div>
         </CardHeader>
@@ -452,7 +478,14 @@ export default function StepSelectOrCreateClient({ clients, formData = {}, setFo
               </InputWithIcon>
 
               {formData.client_id ? (
-                <Selected data={formData.client} onRemove={() => removeClient("client", mainForm)} />
+                <Selected
+                  data={formData.client}
+                  onRemove={() => removeClient("client", mainForm)}
+                  onEdit={() => {
+                    setFormData("client_mode", "edit");
+                    setMMode("create");
+                  }}
+                />
               ) : (
                 <List
                   items={mFiltered}

@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\DocumentBackgroundController;
 use App\Http\Controllers\CarExpenseController;
 use App\Http\Controllers\CarBenefitController;
+use App\Models\Rental;
 
 
 
@@ -51,6 +52,11 @@ Route::middleware(['auth', 'active', 'role:admin'])->prefix('admin')->name('admi
         Route::post('/{documentBackground}/activate', [DocumentBackgroundController::class, 'activate'])->name('activate');
         Route::delete('/{documentBackground}', [DocumentBackgroundController::class, 'destroy'])->name('destroy');
     });
+
+    Route::get('/gps/live-map', fn () => Inertia::render('Gps/LiveMap'))
+        ->name('gps.live-map');
+    Route::get('/gps/alerts', fn () => Inertia::render('Gps/Alerts'))
+        ->name('gps.alerts');
 
     // 💰 Employee Payments (nested under employees)
     Route::prefix('employees/{employee}')->name('employees.')->group(function () {
@@ -146,6 +152,42 @@ Route::prefix('rentals')->name('rentals.')->group(function () {
     // 📝 Contracts
     Route::get('/{rental}/contract', [RentalContractController::class, 'show'])->name('contract.show');
     Route::get('/{rental}/contract/pdf', [RentalContractController::class, 'downloadPdf'])->name('contract.pdf');
+
+    Route::get('/{rental}/gps', function (Rental $rental) {
+        if (strtolower((string) $rental->status) !== 'active') {
+            abort(403);
+        }
+
+        $rental->load('car.carModel');
+
+        return Inertia::render('Rentals/GpsLocation', [
+            'rentalId' => $rental->id,
+            'car' => $rental->car ? [
+                'brand' => $rental->car->carModel->brand ?? '',
+                'model' => $rental->car->carModel->model ?? '',
+                'license_plate' => $rental->car->license_plate ?? $rental->car->wwlicense_plate ?? '',
+            ] : null,
+        ]);
+    })->name('gps');
+
+    Route::get('/{rental}/trip-history', function (Rental $rental) {
+        $status = strtolower((string) $rental->status);
+        if (! in_array($status, ['active', 'completed'], true)) {
+            abort(403);
+        }
+
+        $rental->load('car.carModel');
+
+        return Inertia::render('Rentals/TripHistory', [
+            'rentalId' => $rental->id,
+            'status' => $status,
+            'car' => $rental->car ? [
+                'brand' => $rental->car->carModel->brand ?? '',
+                'model' => $rental->car->carModel->model ?? '',
+                'license_plate' => $rental->car->license_plate ?? $rental->car->wwlicense_plate ?? '',
+            ] : null,
+        ]);
+    })->name('trip-history');
 });
 
 

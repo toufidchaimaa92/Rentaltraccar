@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout';
-import { Badge } from '@/components/ui/badge';
+import RentalStatusBadge from '@/components/rentals/RentalStatusBadge';
 import { Button } from '@/components/ui/button';
 import { Calendar, Check, X } from 'lucide-react';
 import { router } from '@inertiajs/react';
@@ -38,53 +38,6 @@ function formatDate(dateStr: string) {
 function formatCurrency(amount: number) {
   return `${Math.round(amount)} MAD`;
 }
-
-// Status badge color mapping
-function getStatusColor(status?: string) {
-  switch (status?.toLowerCase()) {
-    case 'pending':
-      return `
-        bg-yellow-100 text-yellow-800
-        dark:bg-yellow-900/30 dark:text-yellow-300
-        border border-yellow-200 dark:border-yellow-800
-      `;
-
-    case 'confirmed':
-      return `
-        bg-blue-100 text-blue-800
-        dark:bg-blue-900/30 dark:text-blue-300
-        border border-blue-200 dark:border-blue-800
-      `;
-
-    case 'active':
-      return `
-        bg-emerald-100 text-emerald-800
-        dark:bg-emerald-900/30 dark:text-emerald-300
-        border border-emerald-200 dark:border-emerald-800
-      `;
-
-    case 'completed':
-      return `
-        bg-muted text-muted-foreground
-        border border-border
-      `;
-
-    case 'cancelled':
-      return `
-        bg-red-100 text-red-800
-        dark:bg-red-900/30 dark:text-red-300
-        border border-red-200 dark:border-red-800
-      `;
-
-    default:
-      return `
-        bg-muted text-muted-foreground
-        border border-border
-      `;
-  }
-}
-
-
 
 const DEFAULT_SORT: AdminSortState = { by: 'id', dir: 'desc' };
 
@@ -218,9 +171,9 @@ export default function RentalsIndex({ auth, rentals, filters }: any) {
 
     return {
       key: rental.id,
-      onClick: () => router.get(route('rentals.show', rental.id)),
+      onClick: () => router.visit(route('rentals.show', rental.id)),
       cells: [
-        <span className="font-medium">#{rental.id}</span>,
+        <span className="font-medium">{rental.id}</span>,
         <span>{client.name || '—'}</span>,
         <span>
           {(carModel.brand ?? 'Marque inconnue') + ' ' + (carModel.model ?? 'Modèle inconnu')} {car.license_plate || '❌'}
@@ -231,7 +184,7 @@ export default function RentalsIndex({ auth, rentals, filters }: any) {
           {totalPaid > 0 && <span className="text-xs text-green-600">Payé: {formatCurrency(totalPaid)}</span>}
           {remainingToPay > 0 && <span className="text-xs text-red-600">Reste: {formatCurrency(remainingToPay)}</span>}
         </div>,
-        <Badge className={getStatusColor(rental.status)}>{rental.status ?? '—'}</Badge>,
+        <RentalStatusBadge status={rental.status} />,
       ],
     };
   };
@@ -278,7 +231,7 @@ export default function RentalsIndex({ auth, rentals, filters }: any) {
               return (
                 <AdminMobileCard
                   key={rental.id}
-                  onClick={() => router.get(route('rentals.show', rental.id))}
+                  onClick={() => router.visit(route('rentals.show', rental.id))}
                   items={[
                     { label: "Location", value: `#${rental.id}`, emphasis: true },
                     { label: "Client", value: client.name || "—" },
@@ -288,7 +241,7 @@ export default function RentalsIndex({ auth, rentals, filters }: any) {
                     },
                     { label: "Plaque", value: car.license_plate || "—" },
                     { label: "Dates", value: `${formatDate(rental.start_date)} - ${formatDate(rental.end_date)}` },
-                    { label: "Statut", value: <Badge className={getStatusColor(rental.status)}>{rental.status ?? "—"}</Badge> },
+                    { label: "Statut", value: <RentalStatusBadge status={rental.status} /> },
                     { label: "Total", value: formatCurrency(rental.total_price), emphasis: true },
                     {
                       label: "Payé",

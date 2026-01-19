@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 
 interface Photo { photo_path: string; }
 
@@ -79,7 +80,7 @@ export default function StepPaymentInfo({
   return_time,
   selectedCar: selectedCarProp = null,
 }: StepPaymentInfoProps) {
-  
+
   const selectedCar =
     selectedCarProp ?? carModels.find((m) => m.id === parseInt(car_model_id));
 
@@ -173,7 +174,7 @@ export default function StepPaymentInfo({
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      
+
       {/* LEFT SIDE */}
       <Card>
         <CardHeader>
@@ -319,9 +320,10 @@ export default function StepPaymentInfo({
               </span>
             </Label>
 
-            <div className="flex gap-2">
+            <ButtonGroup className="w-full">
               <Input
                 type="number"
+                className="h-10"
                 value={advance_payment ?? ""}
                 onChange={(e) => {
                   const raw = e.target.value;
@@ -348,6 +350,7 @@ export default function StepPaymentInfo({
               <Button
                 type="button"
                 variant="outline"
+                className="h-10"
                 onClick={() => {
                   updateData("advance_payment", effectiveTotal);
                   updateData("payment_method", "cash");
@@ -356,8 +359,9 @@ export default function StepPaymentInfo({
               >
                 Payer total
               </Button>
-            </div>
+            </ButtonGroup>
           </div>
+
 
           {/* PAYMENT METHOD */}
           {safeAdvancePayment > 0 && (
@@ -413,6 +417,7 @@ export default function StepPaymentInfo({
           endDate={end_date}
           pickupTime={pickup_time}
           returnTime={return_time}
+          formatDates
         />
 
         <ReservationSummaryCard items={summaryItems} />

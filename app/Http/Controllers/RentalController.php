@@ -360,6 +360,7 @@ public function updateStatus(Request $request, Rental $rental)
     {
         $validated = $request->validate([
             'client_id' => 'nullable|exists:clients,id',
+            'client_mode' => 'nullable|string|in:edit',
             'second_driver_id' => 'nullable|exists:clients,id',
             'client.name' => 'required_without:client_id|string|max:255',
             'client.phone' => 'required_without:client_id|string|max:20',
@@ -402,6 +403,13 @@ public function updateStatus(Request $request, Rental $rental)
         $client = $validated['client_id']
             ? Client::findOrFail($validated['client_id'])
             : Client::create($validated['client']);
+
+        if (!empty($validated['client_id']) && ($validated['client_mode'] ?? null) === 'edit') {
+            $clientData = $validated['client'] ?? [];
+            if (!empty($clientData)) {
+                $client->update($clientData);
+            }
+        }
 
         $secondDriverId = null;
         if ($validated['second_driver_id']) {
@@ -574,8 +582,18 @@ public function updateStatus(Request $request, Rental $rental)
         $user = Auth::user();
         $canEditPrice = (bool) ($user->is_admin ?? ($user->role === 'admin'));
 
+        $rentalArray = $rental->toArray();
+        if (isset($rentalArray['car_model'])) {
+            $rentalArray['carModel'] = $rentalArray['car_model'];
+            unset($rentalArray['car_model']);
+        }
+        if (isset($rentalArray['second_driver'])) {
+            $rentalArray['secondDriver'] = $rentalArray['second_driver'];
+            unset($rentalArray['second_driver']);
+        }
+
         return Inertia::render('Rentals/Edit', [
-            'rental' => $rental,
+            'rental' => $rentalArray,
             'clients' => Client::all(['id', 'name', 'phone', 'rating', 'note']),
             'canEditPrice' => $canEditPrice,
             'carModels' => CarModel::with('photos')->get(),

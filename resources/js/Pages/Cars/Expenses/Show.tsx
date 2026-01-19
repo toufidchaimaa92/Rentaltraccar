@@ -50,7 +50,7 @@ export default function ShowEmployee({ auth, employee }: Props) {
     <AuthenticatedLayout user={auth.user}>
       <Head title={`Employé: ${employee.name}`} />
 
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      <div>
         {/* Info & Add Payment */}
         <Card className="shadow-md rounded-2xl">
           <CardHeader>

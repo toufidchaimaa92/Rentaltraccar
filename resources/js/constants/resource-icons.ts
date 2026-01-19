@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   Calendar,
   Car,
   CarFront,
@@ -8,6 +9,7 @@ import {
   FileImage,
   LayoutDashboard,
   Lock,
+  MapPin,
   ReceiptText,
   ShieldUser,
   UserCog,
@@ -28,6 +30,8 @@ export const resourceIcons = {
   adminEmployees: UserCog,
   cars: CarFront,
   longTermRentals: CalendarClock,
+  gpsLiveMap: MapPin,
+  gpsAlerts: AlertTriangle,
   pdfTemplates: FileImage,
 };
 

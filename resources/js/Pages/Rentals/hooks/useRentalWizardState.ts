@@ -15,6 +15,7 @@ const buildInitialData = (mode: RentalWizardMode) => ({
   car_model_id: "",
   car_id: "",
   client_id: "",
+  client_mode: "",
   second_driver_id: "",
   second_driver_mode: "",
   second_driver: {

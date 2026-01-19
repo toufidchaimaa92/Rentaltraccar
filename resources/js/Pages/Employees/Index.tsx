@@ -302,7 +302,7 @@ export default function EmployeesIndex() {
               return (
                 <AdminMobileCard
                   key={employee.id}
-                  onClick={() => router.get(route("admin.employees.edit", employee.id))}
+                  onClick={() => router.visit(route("admin.employees.edit", employee.id))}
                   items={[
                     { label: "Employé", value: employee.name, emphasis: true },
                     { label: "Type", value: typeLabel(employee.employee_type) },

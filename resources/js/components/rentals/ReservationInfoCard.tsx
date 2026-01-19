@@ -68,6 +68,21 @@ export function ReservationInfoCard({
     return isNaN(d.getTime()) ? date : d.toLocaleDateString("fr-FR");
   };
 
+  const formatTime = (time?: string | null) => {
+    if (!time) return null;
+    if (time.includes("T")) {
+      const d = new Date(time);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+      }
+    }
+    const parts = time.split(":");
+    if (parts.length >= 2) {
+      return `${parts[0]}:${parts[1]}`;
+    }
+    return time;
+  };
+
   const brandModel = [car?.brand, car?.model].filter(Boolean).join(" ").trim();
 
   const carTitle = [
@@ -164,7 +179,7 @@ export function ReservationInfoCard({
       {formatDate(startDate)}
     </p>
 
-    {pickupTime && <p className={detailsClass}>à {pickupTime}</p>}
+    {pickupTime && <p className={detailsClass}>à {formatTime(pickupTime)}</p>}
   </div>
 
   <div>
@@ -175,7 +190,7 @@ export function ReservationInfoCard({
       {formatDate(endDate)}
     </p>
 
-    {returnTime && <p className={detailsClass}>à {returnTime}</p>}
+    {returnTime && <p className={detailsClass}>à {formatTime(returnTime)}</p>}
   </div>
 </div>
 

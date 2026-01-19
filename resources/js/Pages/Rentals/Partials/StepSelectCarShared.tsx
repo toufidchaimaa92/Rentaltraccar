@@ -1,9 +1,10 @@
 /* 
   ✨ Redesigned StepSelectCarShared
   - Premium UX
-  - Transmission abbreviations (AUTO / MANU)
-  - Clean badges under title (UPPERCASE)
-  - Selected state → GREEN
+  - shadcn/ui Dialog
+  - Dark mode perfect
+  - Strong green selection
+  - Mobile friendly
 */
 
 import React, {
@@ -54,18 +55,17 @@ const statusConfig = {
   maintenance: { text: "Maintenance", color: "gray" },
 } as const;
 
-/* ---- HELPERS ---- */
-/* ---- SKELETON ---- */
+/* ---- SKELETON (DARK SAFE) ---- */
 const CarCardSkeleton = () => (
-  <div className="rounded-2xl border border-gray-200 shadow-sm animate-pulse overflow-hidden bg-white">
-    <div className="h-40 w-full bg-gray-200"></div>
+  <div className="rounded-2xl border border-border bg-background animate-pulse overflow-hidden">
+    <div className="h-40 w-full bg-muted" />
     <div className="p-4 space-y-3">
-      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+      <div className="h-4 bg-muted rounded w-3/4" />
       <div className="grid grid-cols-2 gap-2">
-        <div className="h-3 bg-gray-200 rounded"></div>
-        <div className="h-3 bg-gray-200 rounded"></div>
+        <div className="h-3 bg-muted rounded" />
+        <div className="h-3 bg-muted rounded" />
       </div>
-      <div className="h-5 bg-gray-200 rounded w-16 ml-auto"></div>
+      <div className="h-5 bg-muted rounded w-16 ml-auto" />
     </div>
   </div>
 );
@@ -92,15 +92,13 @@ export default function StepSelectCarShared({
 
   useEffect(() => setSelectedCarId(car_id ?? null), [car_id]);
 
-  /* MAP PHOTOS */
-  const modelsWithPhotos = useMemo(
+  /* MAP SEARCH */
+  const modelsWithSearch = useMemo(
     () =>
-      carModels.map((m) => {
-        return {
-          ...m,
-          _search: `${m.brand} ${m.model}`.toLowerCase(),
-        };
-      }),
+      carModels.map((m) => ({
+        ...m,
+        _search: `${m.brand} ${m.model}`.toLowerCase(),
+      })),
     [carModels]
   );
 
@@ -108,9 +106,9 @@ export default function StepSelectCarShared({
   const filteredModels = useMemo(() => {
     const q = deferredSearch.toLowerCase().trim();
     return !q
-      ? modelsWithPhotos
-      : modelsWithPhotos.filter((m) => m._search.includes(q));
-  }, [deferredSearch, modelsWithPhotos]);
+      ? modelsWithSearch
+      : modelsWithSearch.filter((m) => m._search.includes(q));
+  }, [deferredSearch, modelsWithSearch]);
 
   useEffect(() => setLimit(24), [deferredSearch]);
 
@@ -162,13 +160,18 @@ export default function StepSelectCarShared({
           placeholder="Rechercher une marque ou un modèle..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-11 rounded-2xl border px-10 text-sm focus:ring-2 focus:ring-green-200"
+          className="
+            w-full h-11 rounded-2xl border border-border px-10 text-sm
+            bg-background
+            focus:ring-2 focus:ring-green-500/30
+            dark:focus:ring-green-400/40
+          "
         />
         {search && (
           <button
             type="button"
             onClick={() => setSearch("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:bg-gray-200"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:bg-muted"
           >
             <X size={15} />
           </button>
@@ -203,12 +206,23 @@ export default function StepSelectCarShared({
       {/* MODAL */}
       {requireCarSelection && (
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="rounded-2xl max-w-md">
-            <DialogHeader>
-              <DialogTitle>Sélectionner une voiture</DialogTitle>
+          <DialogContent>
+            {/* HEADER */}
+            <DialogHeader className="pb-2 border-b border-border">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <DialogTitle className="text-lg font-semibold">
+                    Sélectionner une voiture
+                  </DialogTitle>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {selectedModel?.brand} {selectedModel?.model}
+                  </p>
+                </div>
+              </div>
             </DialogHeader>
 
-            <div className="grid grid-cols-2 gap-3 mt-3 max-h-[420px] overflow-y-auto pr-1">
+            {/* LIST */}
+            <div className="grid grid-cols-2 gap-2 max-h-[420px] overflow-y-auto ">
               {selectedModel?.cars?.length ? (
                 selectedModel.cars.map((car) => {
                   const selected =
@@ -223,26 +237,37 @@ export default function StepSelectCarShared({
                       key={car.id}
                       onClick={() => handleCarSelect(car.id)}
                       className={[
-                        "cursor-pointer rounded-xl border px-4 py-3 transition-all text-sm",
+                        "cursor-pointer rounded-xl border px-4 py-3 transition-all",
+                        "flex flex-col gap-2",
                         selected
-                          ? "border-green-600 bg-green-50 shadow-sm"
-                          : "hover:border-green-400",
+                          ? `
+                              border-green-600
+                              bg-green-50
+                              ring-2 ring-green-200
+                              dark:bg-green-900/30
+                              dark:border-green-500
+                              dark:ring-green-500/40
+                            `
+                          : `
+                              hover:border-green-400
+                              hover:bg-muted/40
+                            `,
                       ].join(" ")}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-green-700">
+                        <span className="font-semibold text-sm tracking-wide">
                           {car.license_plate}
                         </span>
 
                         <Badge
                           variant="outline"
                           className={[
-                            "uppercase text-xs",
+                            "uppercase text-[10px] px-2 py-0.5",
                             cfg.color === "green"
-                              ? "text-green-700 border-green-500 bg-green-100"
+                              ? "text-green-700 border-green-500 bg-green-100 dark:bg-green-900/40 dark:text-green-300"
                               : cfg.color === "red"
-                              ? "text-red-700 border-red-500 bg-red-100"
-                              : "text-muted-foreground border-gray-400 bg-gray-100",
+                              ? "text-red-700 border-red-500 bg-red-100 dark:bg-red-900/40 dark:text-red-300"
+                              : "text-muted-foreground border-border bg-muted",
                           ].join(" ")}
                         >
                           {cfg.text}
@@ -252,9 +277,12 @@ export default function StepSelectCarShared({
                   );
                 })
               ) : (
-                <p className="text-sm text-muted-foreground py-6 text-center">
-                  Aucune voiture disponible
-                </p>
+                <div className="col-span-2 flex flex-col items-center justify-center py-10 text-muted-foreground">
+                  <Info className="h-5 w-5 mb-2 opacity-70" />
+                  <p className="text-sm text-center">
+                    Aucune voiture disponible pour ce modèle
+                  </p>
+                </div>
               )}
             </div>
           </DialogContent>

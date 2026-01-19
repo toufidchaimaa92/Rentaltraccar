@@ -12,15 +12,18 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Loader2,
-  ShieldCheck,
   Trash2,
   Eye,
   FileText,
+  Upload,
   Check,
 } from "lucide-react";
 import { useMemo } from "react";
 import { ProgressUpload } from "@/components/pdf/ProgressUpload";
 
+/* ----------------------------- */
+/* TYPES                         */
+/* ----------------------------- */
 interface Background {
   id: number;
   type: string;
@@ -60,7 +63,7 @@ function TemplateRow({ bg }: { bg: Background }) {
       </div>
 
       <div className="flex items-center gap-2">
-        {/* ACTIVATE ICON */}
+        {/* ACTIVATE */}
         {bg.is_active ? (
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
             <Check className="h-4 w-4 text-emerald-600" />
@@ -143,9 +146,17 @@ function TemplateUploader({ type }: { type: string }) {
         onFileChange={(file) => setData("file", file)}
       />
 
-      <Button disabled={processing} className="w-full">
-        {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Uploader
+      {/* UPLOAD BUTTON WITH ICON */}
+      <Button
+        disabled={processing}
+        className="w-full flex items-center justify-center gap-2"
+      >
+        {processing ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Upload className="h-4 w-4" />
+        )}
+        <span>Uploader</span>
       </Button>
     </form>
   );
@@ -166,9 +177,7 @@ export default function PdfTemplatesIndex({
       <Head title="Templates PDF" />
 
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Templates PDF</h1>
-        </div>
+        <h1 className="text-2xl font-semibold">Templates PDF</h1>
 
         <div className="grid gap-6 md:grid-cols-2">
           {types.map((type) => {

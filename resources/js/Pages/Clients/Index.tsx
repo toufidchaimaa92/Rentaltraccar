@@ -225,7 +225,7 @@ export default function ClientsIndex() {
             (clients.data || []).map((client) => (
               <AdminMobileCard
                 key={client.id}
-                onClick={() => router.get(route("clients.show", client.id))}
+                onClick={() => router.visit(route("clients.show", client.id))}
                 items={[
                   { label: "Client", value: client.name ?? "—", emphasis: true },
                   { label: "Téléphone", value: client.phone || "—" },

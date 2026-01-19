@@ -25,6 +25,7 @@ export type RentalDTO = {
   secondDriver?: any;
   car?: any;
   carModel?: any;
+  car_id?: number | string;
   car_model_id?: number;
   start_date: string;
   end_date: string;
@@ -50,11 +51,19 @@ type Props = {
 
 export default function EditRentalRestricted({ auth, rental, clients, canEditPrice = false, carModels }: Props) {
   const initialManualMode = !!(rental.manual_total ?? null); // true if there is a saved manual override
+  const resolvedCarModelId =
+    rental.carModel?.id ??
+    (rental as any).car_model?.id ??
+    rental.car_model_id ??
+    rental.car?.car_model_id ??
+    "";
+  const resolvedCarId = rental.car?.id ?? (rental as any).car_id ?? "";
 
   const { data, setData, put, processing, errors, transform } = useForm({
     // identifiers
     rental_id: rental.id,
-    car_model_id: rental.carModel?.id ?? '',
+    car_id: resolvedCarId,
+    car_model_id: resolvedCarModelId,
 
     // client / second driver
     client_id: rental.client?.id ?? '',

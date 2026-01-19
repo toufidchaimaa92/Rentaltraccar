@@ -342,10 +342,10 @@ export default function LongTermIndex({ auth, rentals, filters }: any) {
 
                 return (
                   <AdminMobileCard
-                    key={rental.id}
-                    onClick={() => router.get(route('rentals.longTerm.show', rental.id))}
+                    key={rental.contract_id}
+                    onClick={() => router.visit(route('rentals.longTerm.show', rental.contract_id))}
                     items={[
-                      { label: "Contrat", value: `#${rental.id}`, emphasis: true },
+                      { label: "Contrat", value: `#${rental.contract_id}`, emphasis: true },
                       { label: "Client", value: client.name || "Client inconnu" },
                       { label: "Téléphone", value: client.phone || "—" },
                       {

@@ -475,7 +475,7 @@ export default function CarsIndex({ auth, cars, filters, printCars }: Props) {
               return (
                 <AdminMobileCard
                   key={car.id}
-                  onClick={() => router.get(route("cars.show", car.id))}
+                  onClick={() => router.visit(route("cars.show", car.id))}
                   items={[
                     { label: "Marque", value: carModel.brand || "—", emphasis: true },
                     { label: "Modèle", value: carModel.model || "—" },

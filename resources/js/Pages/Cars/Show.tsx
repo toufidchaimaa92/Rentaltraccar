@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Head, Link, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/layouts/AuthenticatedLayout";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { CalendarDays, Car as CarIcon, CreditCard, Pencil } from "lucide-react";
+import { CalendarDays, Car as CarIcon, CreditCard, Pencil, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -68,14 +68,30 @@ export default function ShowCar() {
 
       <div className="space-y-6">
 
-        {/* PAGE TITLE */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">
-            Voiture # {car.license_plate || "N/A"}
-          </h1>
-          <Link href={route("cars.index")}>
-            <Button variant="secondary">Retour</Button>
-          </Link>
+        {/* ================= HEADER ================= */}
+        <div className="flex items-center justify-between gap-4">
+          {/* LEFT */}
+          <div className="flex items-center gap-3 min-w-0">
+            <Link href={route("cars.index")}>
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+
+            <h1 className="text-2xl font-bold tracking-tight truncate">
+              Voiture
+            </h1>
+          </div>
+
+          {/* RIGHT */}
+          <div className="hidden sm:block text-right leading-tight">
+            <p className="text-sm font-semibold">
+              {car.license_plate || "N/A"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Détails du véhicule
+            </p>
+          </div>
         </div>
 
         {/* 2 COLUMNS */}

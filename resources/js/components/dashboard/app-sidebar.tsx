@@ -76,11 +76,6 @@ const data = {
       url: '/car-models',
       icon: resourceIcons.carModels,
     },
-    {
-      title: 'Sécurité',
-      url: route('security.show'),
-      icon: resourceIcons.security,
-    },
   ],
 };
 
@@ -94,29 +89,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   let navMain = [...data.navMain];
   let navSecondary = [...data.navSecondary];
 
-  // 🔐 Admin-only links
+  // 🔐 Admin-only sidebar links (keep only operational ones)
   if (user.role === 'admin') {
     navSecondary = [
       ...navSecondary,
-      {
-        title: 'Utilisateurs',
-        url: '/admin/users',
-        icon: resourceIcons.adminUsers,
-      },
       {
         title: 'Employés',
         url: '/admin/employees',
         icon: resourceIcons.adminEmployees,
       },
       {
-        title: 'PDF Templates',
-        url: '/admin/pdf-templates',
-        icon: resourceIcons.pdfTemplates,
-      },
-      {
         title: 'Voitures',
         url: '/cars',
         icon: resourceIcons.cars,
+      },
+      {
+        title: 'GPS Live Map',
+        url: '/admin/gps/live-map',
+        icon: resourceIcons.gpsLiveMap,
+      },
+      {
+        title: 'GPS Alerts',
+        url: '/admin/gps/alerts',
+        icon: resourceIcons.gpsAlerts,
       },
     ];
   }
@@ -131,12 +126,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
-                <div className="text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
                   <Logo className="size-8" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{activeProject.title}</span>
-                  <span className="truncate text-xs">{activeProject.subtitle}</span>
+                  <span className="truncate font-semibold">
+                    {activeProject.title}
+                  </span>
+                  <span className="truncate text-xs">
+                    {activeProject.subtitle}
+                  </span>
                 </div>
               </SidebarMenuButton>
             </Link>

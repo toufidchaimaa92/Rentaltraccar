@@ -25,6 +25,7 @@ import autoTable from 'jspdf-autotable';
 import { resourceIcons } from '@/constants/resource-icons';
 import CompletionDialogs from '@/components/rentals/CompletionDialogs';
 import useRentalCompletionFlow from '@/hooks/useRentalCompletionFlow';
+import RentalStatusBadge from '@/components/rentals/RentalStatusBadge';
 
 interface CarModel {
   brand?: string;
@@ -654,10 +655,8 @@ export default function Dashboard({
                           </p>
                         </div>
 
-                        <Button variant="link" className="p-0 h-auto" onClick={() => openDialog(r)}>
-                          <span className="text-red-600 font-semibold">
-                            {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-                          </span>
+                        <Button variant="ghost" className="p-0 h-auto" onClick={() => openDialog(r)}>
+                          <RentalStatusBadge status={r.status} />
                         </Button>
                       </div>
 
@@ -756,8 +755,8 @@ export default function Dashboard({
                         </span>
                       ),
                       (
-                        <Button variant="link" onClick={() => openDialog(rental)} className="text-red-600">
-                          {rental.status.charAt(0).toUpperCase() + rental.status.slice(1)}
+                        <Button variant="ghost" onClick={() => openDialog(rental)} className="p-0">
+                          <RentalStatusBadge status={rental.status} />
                         </Button>
                       ),
                       (

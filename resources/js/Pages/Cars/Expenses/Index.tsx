@@ -1,20 +1,36 @@
-import React from "react";
-// ❌ import { Inertia } from "@inertiajs/inertia";
+import React, { useMemo } from "react";
 import { Head, Link, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Button } from "@/Components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/Components/ui/card";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/Components/ui/table";
-import { Edit, Trash2 } from "lucide-react";
+import {
+  AdminTable,
+  AdminTableColumn,
+  AdminTableRow,
+} from "@/components/admin/admin-table";
+import AdminMobileCard from "@/components/admin/AdminMobileCard";
+import {
+  Edit,
+  Trash2,
+  ArrowLeft,
+  CalendarDays,
+  Plus,
+} from "lucide-react";
 import { format, parseISO, isValid } from "date-fns";
+
+/* ================= TYPES ================= */
 
 interface Expense {
   id: number;
   type: string;
   invoice_number?: string;
   amount: number;
-  expense_date?: string; // may be ISO like 2025-08-28T00:00:00.000000Z
+  expense_date?: string;
   notes?: string;
+}
+
+interface ExpenseRow extends Expense {
+  rowIndex: number;
 }
 
 interface Props {
@@ -25,10 +41,11 @@ interface Props {
   expenses: Expense[];
 }
 
+/* ================= HELPERS ================= */
+
 function formatDate(value?: string) {
-  if (!value) return "-";
+  if (!value) return "—";
   try {
-    // Works for both 'YYYY-MM-DD' and full ISO strings with Z
     const d = parseISO(value);
     if (!isValid(d)) return value;
     return format(d, "dd/MM/yyyy");
@@ -37,6 +54,13 @@ function formatDate(value?: string) {
   }
 }
 
+function fmtMoney(n: number | string | null | undefined) {
+  const num = Number(n ?? 0);
+  return Number.isInteger(num) ? `${num} Dh` : `${num.toFixed(2)} Dh`;
+}
+
+/* ================= PAGE ================= */
+
 const Index: React.FC<Props> = ({ car, expenses }) => {
   const handleDelete = (id: number) => {
     if (confirm("Voulez-vous vraiment supprimer cette dépense ?")) {
@@ -44,70 +68,161 @@ const Index: React.FC<Props> = ({ car, expenses }) => {
     }
   };
 
+  const columns = useMemo<AdminTableColumn[]>(
+    () => [
+      { id: "index", label: "#" },
+      { id: "type", label: "Type" },
+      { id: "invoice", label: "Facture" },
+      { id: "amount", label: "Montant" },
+      { id: "date", label: "Date" },
+      { id: "notes", label: "Notes" },
+      { id: "actions", label: "Actions" },
+    ],
+    []
+  );
+
+  const rows = useMemo<ExpenseRow[]>(
+    () => expenses.map((exp, index) => ({ ...exp, rowIndex: index + 1 })),
+    [expenses]
+  );
+
+  const renderRow = (exp: ExpenseRow): AdminTableRow => ({
+    key: exp.id,
+    cells: [
+      <span>{exp.rowIndex}</span>,
+      <span>{exp.type}</span>,
+      <span>{exp.invoice_number || "—"}</span>,
+      <span className="font-semibold text-red-600">
+        {fmtMoney(exp.amount)}
+      </span>,
+      <span>{formatDate(exp.expense_date)}</span>,
+      <span className="text-muted-foreground">{exp.notes || "—"}</span>,
+      <div className="flex items-center gap-3">
+        <Link
+          href={route("car-expenses.edit", [car.id, exp.id])}
+          className="text-yellow-600 hover:text-yellow-700 transition"
+          title="Modifier"
+        >
+          <Edit size={18} />
+        </Link>
+        <button
+          onClick={() => handleDelete(exp.id)}
+          className="text-red-600 hover:text-red-700 transition"
+          title="Supprimer"
+        >
+          <Trash2 size={18} />
+        </button>
+      </div>,
+    ],
+  });
+
   return (
     <AuthenticatedLayout>
-      <Head title={`Dépenses de la voiture ${car.license_plate}`} />
+      <Head title={`Dépenses – ${car.license_plate}`} />
 
-      <div className="w-full px-4 py-8">
-        {/* En-tête */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">
-            Dépenses pour {car.license_plate || `Voiture #${car.id}`}
-          </h1>
-          <Link href={route("car-expenses.create", car.id)}>
-            <Button variant="default">Ajouter une dépense</Button>
-          </Link>
+      <div className="space-y-6">
+
+        {/* ================= HEADER ================= */}
+        <div className="flex items-center justify-between gap-4">
+          {/* LEFT */}
+          <div className="flex items-center gap-3 min-w-0">
+            <Link href={route("cars.show", car.id)}>
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+
+            <h1 className="text-2xl font-bold tracking-tight truncate">
+              Dépenses voiture
+            </h1>
+          </div>
+
+          {/* RIGHT */}
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block text-right leading-tight">
+              <p className="text-sm font-semibold">{car.license_plate}</p>
+              <p className="text-xs text-muted-foreground">
+                Gestion des dépenses
+              </p>
+            </div>
+
+            <Link href={route("car-expenses.create", car.id)}>
+              <Button className="flex items-center gap-2">
+                <Plus className="w-5 h-5" />
+                <span className="hidden sm:inline">Ajouter</span>
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        {/* Carte pleine largeur */}
-        <Card className="w-full shadow-md rounded-2xl">
+
+        {/* ================= CONTENT ================= */}
+        <Card className="rounded-2xl overflow-hidden">
           <CardHeader>
-            <CardTitle>Liste des dépenses</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-muted-foreground" />
+              Historique des dépenses
+            </CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            {expenses.length > 0 ? (
-              <Table className="min-w-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Facture</TableHead>
-                    <TableHead>Montant</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Notes</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {expenses.map((exp, index) => (
-                    <TableRow key={exp.id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell>{exp.type}</TableCell>
-                      <TableCell>{exp.invoice_number || "-"}</TableCell>
-                      <TableCell>{exp.amount} Dh</TableCell>
-                      <TableCell>{formatDate(exp.expense_date)}</TableCell>
-                      <TableCell>{exp.notes || "-"}</TableCell>
-                      <TableCell className="space-x-2 flex">
+
+          <CardContent className="space-y-4">
+
+            {/* ================= MOBILE ================= */}
+            <div className="space-y-4 md:hidden">
+              {rows.length ? (
+                rows.map((exp) => (
+                  <AdminMobileCard
+                    key={exp.id}
+                    onClick={() => router.visit(route("car-expenses.edit", [car.id, exp.id]))}
+                    items={[
+                      { label: "#", value: exp.rowIndex, emphasis: true },
+                      { label: "Type", value: exp.type },
+                      { label: "Facture", value: exp.invoice_number || "—" },
+                      {
+                        label: "Montant",
+                        value: fmtMoney(exp.amount),
+                        emphasis: true,
+                      },
+                      { label: "Date", value: formatDate(exp.expense_date) },
+                      { label: "Notes", value: exp.notes || "—" },
+                    ]}
+                    footer={
+                      <>
                         <Link
                           href={route("car-expenses.edit", [car.id, exp.id])}
-                          className="p-2 bg-yellow-100 text-yellow-600 rounded-full hover:bg-yellow-200 transition"
+                          className="text-yellow-600 hover:text-yellow-700 transition"
+                          title="Modifier"
                         >
                           <Edit size={18} />
                         </Link>
                         <button
                           onClick={() => handleDelete(exp.id)}
-                          className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition"
+                          className="text-red-600 hover:text-red-700 transition"
+                          title="Supprimer"
                         >
                           <Trash2 size={18} />
                         </button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <p className="text-muted-foreground italic">Aucune dépense enregistrée.</p>
-            )}
+                      </>
+                    }
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground italic">
+                  Aucune dépense enregistrée.
+                </p>
+              )}
+            </div>
+
+            {/* ================= DESKTOP ================= */}
+            <div className="hidden md:block">
+              <AdminTable
+                columns={columns}
+                data={rows}
+                renderRow={renderRow}
+                emptyMessage="Aucune dépense enregistrée."
+              />
+            </div>
+
           </CardContent>
         </Card>
       </div>

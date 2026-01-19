@@ -323,6 +323,7 @@ export default function UsersIndex({ auth, users, filters, meta }: Props) {
           (users.data || []).map((user) => (
             <AdminMobileCard
               key={user.id}
+              onClick={isAdmin ? () => openEditDialog(user) : undefined}
               items={[
                 { label: "Nom", value: user.name, emphasis: true },
                 { label: "Email", value: user.email || "—" },

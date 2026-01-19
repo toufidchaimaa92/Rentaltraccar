@@ -7,6 +7,9 @@ import {
     Palette,
     Sun,
     Monitor,
+    ShieldCheck,
+    Users,
+    FileText,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -55,6 +58,7 @@ export function NavUser({ user }: { user: User }) {
                                     {user.name.substring(0, 2).toUpperCase()}
                                 </AvatarFallback>
                             </Avatar>
+
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-semibold">
                                     {user.name}
@@ -63,38 +67,35 @@ export function NavUser({ user }: { user: User }) {
                                     {userIdentifier}
                                 </span>
                             </div>
+
                             <ChevronsUpDown className="ml-auto size-4" />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
+
                     <DropdownMenuContent
                         className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                         side={isMobile ? 'bottom' : 'right'}
                         align="end"
                         sideOffset={4}
                     >
+                        {/* THEME */}
                         <DropdownMenuGroup>
                             <DropdownMenuSub>
                                 <DropdownMenuSubTrigger className="flex w-full items-center gap-2">
-                                    <Palette className="text-muted-foreground size-4" />
+                                    <Palette className="size-4 text-muted-foreground" />
                                     Theme
                                 </DropdownMenuSubTrigger>
                                 <DropdownMenuPortal>
                                     <DropdownMenuSubContent>
-                                        <DropdownMenuItem
-                                            onClick={() => setTheme('light')}
-                                        >
+                                        <DropdownMenuItem onClick={() => setTheme('light')}>
                                             <Sun />
                                             <span>Light</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onClick={() => setTheme('dark')}
-                                        >
+                                        <DropdownMenuItem onClick={() => setTheme('dark')}>
                                             <Moon />
                                             <span>Dark</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onClick={() => setTheme('system')}
-                                        >
+                                        <DropdownMenuItem onClick={() => setTheme('system')}>
                                             <Monitor />
                                             <span>System</span>
                                         </DropdownMenuItem>
@@ -102,16 +103,58 @@ export function NavUser({ user }: { user: User }) {
                                 </DropdownMenuPortal>
                             </DropdownMenuSub>
                         </DropdownMenuGroup>
+
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+
+                        {/* ACCOUNT / ADMIN */}
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={route('security.show')}
+                                    className="flex w-full items-center gap-2"
+                                >
+                                    <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                                    <span>Sécurité</span>
+                                </Link>
+                            </DropdownMenuItem>
+
+                            {user.role === 'admin' && (
+                                <>
+                                    <DropdownMenuItem asChild>
+                                        <Link
+                                            href="/admin/users"
+                                            className="flex w-full items-center gap-2"
+                                        >
+                                            <Users className="h-4 w-4 text-muted-foreground" />
+                                            <span>Utilisateurs</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem asChild>
+                                        <Link
+                                            href="/admin/pdf-templates"
+                                            className="flex w-full items-center gap-2"
+                                        >
+                                            <FileText className="h-4 w-4 text-muted-foreground" />
+                                            <span>PDF Templates</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                </>
+                            )}
+                        </DropdownMenuGroup>
+
+                        <DropdownMenuSeparator />
+
+                        {/* LOGOUT */}
+                        <DropdownMenuItem className="focus:bg-destructive/10">
                             <Link
-                                className="flex w-full items-center gap-2"
+                                className="flex w-full items-center gap-2 text-destructive"
                                 href={route('logout')}
                                 method="post"
                                 as="button"
                             >
-                                <LogOut />
-                                Log out
+                                <LogOut className="h-4 w-4 text-destructive" />
+                                <span className="text-destructive">Log out</span>
                             </Link>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
