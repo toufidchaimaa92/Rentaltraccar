@@ -120,18 +120,18 @@ export default function CreateCar({ auth, carModels }) {
   return (
     <AuthenticatedLayout user={auth.user}>
       <Head title="Créer une voiture" />
+      
+      <form className="space-y-6" onSubmit={submit}>
+        {/* ================= CARD 1: INFO VÉHICULE ================ */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CarIcon className="h-5 w-5 text-primary" />
+              Informations du véhicule
+            </CardTitle>
+          </CardHeader>
 
-      {/* ================= CARD 1: INFO VÉHICULE ================ */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <CarIcon className="h-5 w-5 text-primary" />
-            Informations du véhicule
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent>
-          <form className="space-y-4" onSubmit={submit}>
+          <CardContent className="space-y-4">
             {/* ROW 1 --- MODEL + STATUS */}
             <div className="grid md:grid-cols-2 gap-4">
               <div>
@@ -280,8 +280,6 @@ export default function CreateCar({ auth, carModels }) {
               </div>
             </div>
 
-            {/* SUBMIT BUTTON MOVED AFTER FINANCE CARD */}
-
           </form>
         </CardContent>
       </Card>
@@ -387,8 +385,9 @@ export default function CreateCar({ auth, carModels }) {
 
           {/* Submit */}
           <div className="flex justify-center mt-8">
+            {/* ✅ SUBMIT BUTTON NOW WORKS */}
             <Button type="submit" disabled={processing} className="w-full md:w-auto">
-              Créer le véhicule
+              {processing ? "Création..." : "Créer le véhicule"}
             </Button>
           </div>
         </CardContent>
